@@ -1,0 +1,23 @@
+services:
+    rmcgirr83.upcomingbirthdays.acplistener:
+        class: rmcgirr83\upcomingbirthdays\event\acp_listener
+        tags:
+            - { name: event.listener }
+
+    rmcgirr83.upcomingbirthdays.mainlistener:
+        class: rmcgirr83\upcomingbirthdays\event\main_listener
+        arguments:
+            - @rmcgirr83.upcomingbirthdays.functions
+            - @config
+            - @template
+            - @user 
+        tags:
+            - { name: event.listener }
+
+    rmcgirr83.upcomingbirthdays.functions:
+        class: rmcgirr83\upcomingbirthdays\core\functions_upcomingbirthdays
+        arguments:
+            - @config
+            - @dbal.conn
+            - @template
+            - @user

@@ -1,0 +1,24 @@
+{
+	"name": "rmcgirr83/upcomingbirthdays",
+	"type": "phpbb-extension",
+	"description": "Shows upcoming birthdays on index page, number of days can be modified via ACP.",
+	"homepage": "https://github.com/rmcgirr83/phpBB-3.1-upcomingbirthdays",
+	"version": "1.0.0",
+	"time": "2015-04-30",
+	"license": "GPL-2.0",
+	"authors": [
+		{
+			"name": "Rich McGirr",
+			"role": "Lead Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.3"
+	},
+	"extra": {
+		"display-name": "Upcoming Birthdays",
+		"soft-require": {
+			"phpbb/phpbb": ">=3.1.3,<3.2.*@dev"
+		}
+	}
+}
