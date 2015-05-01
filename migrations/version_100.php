@@ -31,7 +31,7 @@ class version_100 extends \phpbb\db\migration\migration
 	{
 		return array(
 			array('config.add', array('ubl_version', '1.0.0')),
-			array('config.add', array('allow_birthdays_ahead', 0)),
+			array('config.add', array('allow_birthdays_ahead', 30)),
 		);
 	}
 

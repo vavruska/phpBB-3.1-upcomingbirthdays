@@ -7,18 +7,10 @@ services:
     rmcgirr83.upcomingbirthdays.mainlistener:
         class: rmcgirr83\upcomingbirthdays\event\main_listener
         arguments:
-            - @rmcgirr83.upcomingbirthdays.functions
-            - @config
-            - @template
-            - @user 
-        tags:
-            - { name: event.listener }
-
-    rmcgirr83.upcomingbirthdays.functions:
-        class: rmcgirr83\upcomingbirthdays\core\functions_upcomingbirthdays
-        arguments:
             - @auth
             - @config
             - @dbal.conn
             - @template
-            - @user
+            - @user 
+        tags:
+            - { name: event.listener }
