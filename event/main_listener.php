@@ -94,7 +94,7 @@ class main_listener implements EventSubscriberInterface
 		{
 			$bdday = $bdmonth = 0;
 			list($bdday, $bdmonth) = explode('-', $row['user_birthday']);
-			
+
 			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
 			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
@@ -107,13 +107,13 @@ class main_listener implements EventSubscriberInterface
 			}
 			$ucbirthdayrow[] = array(
 				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
-				'username'				=>	$row['username'], 
-				'user_birthdayyear' 	=> 	$birthdayyear, 
-				'user_birthday' 		=> 	$row['user_birthday'], 
-				'user_id'				=>	$row['user_id'], 
+				'username'				=>	$row['username'],
+				'user_birthdayyear' 	=> 	$birthdayyear,
+				'user_birthday' 		=> 	$row['user_birthday'],
+				'user_id'				=>	$row['user_id'],
 				'user_colour'			=>	$row['user_colour'],
 			);
-			
+
 		}
 		$this->db->sql_freeresult($result);
 		sort($ucbirthdayrow);
@@ -134,7 +134,7 @@ class main_listener implements EventSubscriberInterface
 				}
 			}
 		}
-		
+
 		// Assign index specific vars
 		$this->template->assign_vars(array(
 			'BIRTHDAYS_AHEAD_LIST'	=> $birthday_ahead_list,
