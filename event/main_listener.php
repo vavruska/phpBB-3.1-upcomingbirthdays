@@ -60,7 +60,7 @@ class main_listener implements EventSubscriberInterface
 		{
 			return;
 		}
-var_dump($this->config['allow_birthdays_ahead']);
+
 		$this->user->add_lang_ext('rmcgirr83/upcomingbirthdays', 'upcomingbirthdays');
 
 		$this->upcoming_birthdays();
