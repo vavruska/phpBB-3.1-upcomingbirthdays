@@ -97,7 +97,12 @@ class main_listener implements EventSubscriberInterface
 			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
 			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
-
+			// re-write those who have feb 29th as a birthday but only on non leap years
+			if ($now['mday'] == 28 && $now['mon'] == 2 && !$time->format('L') && trim($bdday) == 29)
+			{
+				$bdday = $now['mday'];
+				$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+			}
 			$ucbirthdayrow[] = array(
 				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
 				'username'				=>	$row['username'],
