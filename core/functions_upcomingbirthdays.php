@@ -13,6 +13,9 @@ namespace rmcgirr83\upcomingbirthdays\core;
 
 class functions_upcomingbirthdays
 {
+	/** @var \phpbb\auth\auth */
+	protected $auth;
+
 	/** @var \phpbb\config\config */
 	protected $config;
 
@@ -25,8 +28,9 @@ class functions_upcomingbirthdays
 	/** @var \phpbb\user */
 	protected $user;
 
-	public function __construct(\phpbb\config\config $config, \phpbb\db\driver\driver_interface $db,  \phpbb\template\template $template, \phpbb\user $user)
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\config\config $config, \phpbb\db\driver\driver_interface $db,  \phpbb\template\template $template, \phpbb\user $user)
 	{
+		$this->auth = $auth;
 		$this->config = $config;
 		$this->db = $db;
 		$this->template = $template;
@@ -35,7 +39,6 @@ class functions_upcomingbirthdays
 
 	public function upcoming_birthdays()
 	{
-	
 		$birthday_ahead_list = '';
 		$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday
 			FROM ' . USERS_TABLE . ' u
@@ -62,17 +65,18 @@ class functions_upcomingbirthdays
 			$bdday = $bdmonth = 0;
 			list($bdday, $bdmonth) = explode('-', $row['user_birthday']);
 			
-			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday) );
+			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
 			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 
 			$ucbirthdayrow[] = array(
-								'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
-								'username'				=>	$row['username'], 
-								'user_birthdayyear' 	=> 	$birthdayyear, 
-								'user_birthday' 		=> 	$row['user_birthday'], 
-								'user_id'				=>	$row['user_id'], 
-								'user_colour'			=>	$row['user_colour']);
+				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
+				'username'				=>	$row['username'], 
+				'user_birthdayyear' 	=> 	$birthdayyear, 
+				'user_birthday' 		=> 	$row['user_birthday'], 
+				'user_id'				=>	$row['user_id'], 
+				'user_colour'			=>	$row['user_colour'],
+			);
 			
 		}
 		$this->db->sql_freeresult($result);
@@ -82,10 +86,10 @@ class functions_upcomingbirthdays
 		{
 			if ( $ucbirthdayrow[$i]['user_birthday_tstamp'] >= $tomorrow && $ucbirthdayrow[$i]['user_birthday_tstamp'] <= ($today + ((($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']) * 86400) ) )
 			{
-				$user_link = get_username_string('full', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']);
+				$user_link = ($this->auth->acl_get('u_viewprofile')) ? get_username_string('full', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']) : get_username_string('no_profile', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']);
 
 				//lets add to the birthday_ahead list.
-				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . date('D, j. M', $ucbirthdayrow[$i]['user_birthday_tstamp']) . '">' . $user_link . '</span>';
+				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . $this->user->format_date($ucbirthdayrow[$i]['user_birthday_tstamp'], 'D, j. M') . '">' . $user_link . '</span>';
 				if ( $age = (int) substr($ucbirthdayrow[$i]['user_birthday'], -4) )
 				{
 					$birthday_ahead_list .= ' (' . ($ucbirthdayrow[$i]['user_birthdayyear'] - $age) . ')';
@@ -97,6 +101,6 @@ class functions_upcomingbirthdays
 		$this->template->assign_vars(array(
 			'BIRTHDAYS_AHEAD_LIST'	=> $birthday_ahead_list,
 			'L_BIRTHDAYS_AHEAD'	=> sprintf($this->user->lang['BIRTHDAYS_AHEAD'], ($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']),
-			));
+		));
 	}
 }

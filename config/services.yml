@@ -17,6 +17,7 @@ services:
     rmcgirr83.upcomingbirthdays.functions:
         class: rmcgirr83\upcomingbirthdays\core\functions_upcomingbirthdays
         arguments:
+            - @auth
             - @config
             - @dbal.conn
             - @template
