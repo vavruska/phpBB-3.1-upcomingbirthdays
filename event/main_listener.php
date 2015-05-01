@@ -87,31 +87,33 @@ class main_listener implements EventSubscriberInterface
 
 		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
 		$tomorrow = (mktime(0, 0, 0, $now['mon'], $now['mday']+1, $now['year']));
+		$upcoming_year = (int) $now['year'] + 1;
 
 		$ucbirthdayrow = array();
 		while ($row = $this->db->sql_fetchrow($result))
 		{
 			$bdday = $bdmonth = 0;
 			list($bdday, $bdmonth) = explode('-', $row['user_birthday']);
-
+			
 			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
 			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+
 			// re-write those who have feb 29th as a birthday but only on non leap years
-			if ($now['mday'] == 28 && $now['mon'] == 2 && !$time->format('L') && trim($bdday) == 29)
+			if (!$this->is_leap_year($upcoming_year) && (int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
 			{
-				$bdday = $now['mday'];
+				$bdday = 28;
 				$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			}
 			$ucbirthdayrow[] = array(
 				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
-				'username'				=>	$row['username'],
-				'user_birthdayyear' 	=> 	$birthdayyear,
-				'user_birthday' 		=> 	$row['user_birthday'],
-				'user_id'				=>	$row['user_id'],
+				'username'				=>	$row['username'], 
+				'user_birthdayyear' 	=> 	$birthdayyear, 
+				'user_birthday' 		=> 	$row['user_birthday'], 
+				'user_id'				=>	$row['user_id'], 
 				'user_colour'			=>	$row['user_colour'],
 			);
-
+			
 		}
 		$this->db->sql_freeresult($result);
 		sort($ucbirthdayrow);
@@ -132,11 +134,17 @@ class main_listener implements EventSubscriberInterface
 				}
 			}
 		}
-
+		
 		// Assign index specific vars
 		$this->template->assign_vars(array(
 			'BIRTHDAYS_AHEAD_LIST'	=> $birthday_ahead_list,
 			'L_BIRTHDAYS_AHEAD'	=> sprintf($this->user->lang['BIRTHDAYS_AHEAD'], ($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']),
 		));
+	}
+
+	private function is_leap_year($year = NULL)
+	{
+		is_numeric( $year ) || $year = date( 'Y' );
+		return checkdate( 2, 29, ( int ) $year );
 	}
 }
