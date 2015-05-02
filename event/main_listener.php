@@ -127,7 +127,7 @@ class main_listener implements EventSubscriberInterface
 				$user_link = ($this->auth->acl_get('u_viewprofile')) ? get_username_string('full', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']) : get_username_string('no_profile', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']);
 
 				//lets add to the birthday_ahead list.
-				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . $this->user->format_date($ucbirthdayrow[$i]['user_birthday_tstamp'], 'D, j. M') . '">' . $user_link . '</span>';
+				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . date('D, j. M', $ucbirthdayrow[$i]['user_birthday_tstamp']) . '">' . $user_link . '</span>';
 				if ($age = (int) substr($ucbirthdayrow[$i]['user_birthday'], -4))
 				{
 					$birthday_ahead_list .= ' (' . ($ucbirthdayrow[$i]['user_birthdayyear'] - $age) . ')';
