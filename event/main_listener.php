@@ -87,7 +87,6 @@ class main_listener implements EventSubscriberInterface
 
 		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
 		$tomorrow = (mktime(0, 0, 0, $now['mon'], $now['mday']+1, $now['year']));
-		$upcoming_year = (int) $now['year'] + 1;
 
 		$ucbirthdayrow = array();
 		while ($row = $this->db->sql_fetchrow($result))
@@ -100,10 +99,13 @@ class main_listener implements EventSubscriberInterface
 			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 
 			// re-write those who have feb 29th as a birthday but only on non leap years
-			if (!$this->is_leap_year($upcoming_year) && (int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
+			if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
 			{
-				$bdday = 28;
-				$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+				if (!$this->is_leap_year($birthdayyear) && !$this->is_leap_year($now['year']))
+				{
+					$bdday = 28;
+					$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+				}
 			}
 			$ucbirthdayrow[] = array(
 				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
@@ -144,7 +146,9 @@ class main_listener implements EventSubscriberInterface
 
 	private function is_leap_year($year = null)
 	{
-		is_numeric( $year ) || $year = date( 'Y' );
-		return checkdate( 2, 29, ( int ) $year );
+		if (is_numeric($year))
+		{
+			return checkdate( 2, 29, (int) $year );
+		}
 	}
 }
