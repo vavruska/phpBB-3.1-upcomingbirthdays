@@ -66,6 +66,8 @@ class main_listener implements EventSubscriberInterface
 		$this->upcoming_birthdays();
 	}
 
+	// Much of the following thanks to the original code by Lefty74
+	// Modified by RMcGirr83 for phpBB 3.1.X
 	public function upcoming_birthdays()
 	{
 		$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday
@@ -101,7 +103,7 @@ class main_listener implements EventSubscriberInterface
 			// re-write those who have feb 29th as a birthday but only on non leap years
 			if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
 			{
-				if (!$this->is_leap_year($birthdayyear) && !$this->is_leap_year($now['year']))
+				if (!$this->is_leap_year($birthdayyear))
 				{
 					$bdday = 28;
 					$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
@@ -144,7 +146,7 @@ class main_listener implements EventSubscriberInterface
 		));
 	}
 
-	private function is_leap_year($year = null)
+	private function is_leap_year($year)
 	{
 		if (is_numeric($year))
 		{
