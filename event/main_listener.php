@@ -51,19 +51,12 @@ class main_listener implements EventSubscriberInterface
 
 	public function main($event)
 	{
-		if (!$this->config['allow_birthdays'])
+		if ($this->config['load_birthdays'] && $this->config['allow_birthdays'] && ($this->config['allow_birthdays_ahead'] > 0))
 		{
-			return;
+			$this->user->add_lang_ext('rmcgirr83/upcomingbirthdays', 'upcomingbirthdays');
+
+			$this->upcoming_birthdays();
 		}
-
-		if (!$this->config['allow_birthdays_ahead'] > 0)
-		{
-			return;
-		}
-
-		$this->user->add_lang_ext('rmcgirr83/upcomingbirthdays', 'upcomingbirthdays');
-
-		$this->upcoming_birthdays();
 	}
 
 	// Much of the following thanks to the original code by Lefty74
@@ -94,11 +87,11 @@ class main_listener implements EventSubscriberInterface
 		while ($row = $this->db->sql_fetchrow($result))
 		{
 			$bdday = $bdmonth = 0;
-			list($bdday, $bdmonth) = explode('-', $row['user_birthday']);
+			list($bdday, $bdmonth) = array_map('intval', explode('-', $row['user_birthday']));
 
 			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
-			$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+			$birthdaydate = ($birthdayyear . '-' . (int) $bdmonth . '-' . (int) $bdday);
 
 			// re-write those who have feb 29th as a birthday but only on non leap years
 			if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
@@ -126,7 +119,7 @@ class main_listener implements EventSubscriberInterface
 
 		for ($i = 0, $end = sizeof($ucbirthdayrow); $i < $end; $i ++)
 		{
-			if ( $ucbirthdayrow[$i]['user_birthday_tstamp'] >= $tomorrow && $ucbirthdayrow[$i]['user_birthday_tstamp'] <= ($today + ((($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']) * 86400) ) )
+			if ($ucbirthdayrow[$i]['user_birthday_tstamp'] >= $tomorrow && $ucbirthdayrow[$i]['user_birthday_tstamp'] <= ($today + ((($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']) * 86400)))
 			{
 				$user_link = ($this->auth->acl_get('u_viewprofile')) ? get_username_string('full', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']) : get_username_string('no_profile', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']);
 
