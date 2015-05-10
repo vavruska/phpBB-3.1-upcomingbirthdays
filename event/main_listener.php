@@ -96,7 +96,7 @@ class main_listener implements EventSubscriberInterface
 			// re-write those who have feb 29th as a birthday but only on non leap years
 			if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
 			{
-				if (!$this->is_leap_year($birthdayyear))
+				if (!$this->is_leap_year($birthdayyear) && !$this->is_leap_year($now['year']))
 				{
 					$bdday = 28;
 					$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
@@ -139,7 +139,7 @@ class main_listener implements EventSubscriberInterface
 		));
 	}
 
-	private function is_leap_year($year)
+	private function is_leap_year($year = null)
 	{
 		if (is_numeric($year))
 		{
