@@ -71,8 +71,9 @@ class main_listener implements EventSubscriberInterface
 				AND	u.user_birthday NOT LIKE '%- 0-%'
 				AND u.user_birthday NOT LIKE '0-%'
 				AND	u.user_birthday NOT LIKE '0- 0-%'
+				AND u.user_birthday NOT LIKE '0-%-%'
 				AND	u.user_birthday NOT LIKE ''
-				AND u.user_type IN (" . USER_NORMAL . ', ' . USER_FOUNDER . ')';
+				AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER));
 		$result = $this->db->sql_query($sql);
 		//delete the above line and uncomment below line if you want to cache the query for an hour
 		//$result = $this->db->sql_query($sql,3600);
@@ -86,11 +87,12 @@ class main_listener implements EventSubscriberInterface
 		$ucbirthdayrow = array();
 		while ($row = $this->db->sql_fetchrow($result))
 		{
+
 			$bdday = $bdmonth = 0;
 			list($bdday, $bdmonth) = array_map('intval', explode('-', $row['user_birthday']));
 
-			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
-			$birthdayyear = ( $birthdaycheck < $today ) ? gmdate('Y') + 1 : gmdate('Y');
+			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday) . ' UTC');
+			$birthdayyear = ($birthdaycheck < $today) ? gmdate('Y') + 1 : gmdate('Y');
 			$birthdaydate = ($birthdayyear . '-' . (int) $bdmonth . '-' . (int) $bdday);
 
 			// re-write those who have feb 29th as a birthday but only on non leap years
@@ -102,8 +104,9 @@ class main_listener implements EventSubscriberInterface
 					$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
 				}
 			}
+
 			$ucbirthdayrow[] = array(
-				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate . ' GMT'),
+				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate. ' UTC'),
 				'username'				=>	$row['username'],
 				'user_birthdayyear' 	=> 	$birthdayyear,
 				'user_birthday' 		=> 	$row['user_birthday'],
@@ -122,9 +125,10 @@ class main_listener implements EventSubscriberInterface
 			if ($ucbirthdayrow[$i]['user_birthday_tstamp'] >= $tomorrow && $ucbirthdayrow[$i]['user_birthday_tstamp'] <= ($today + ((($this->config['allow_birthdays_ahead'] > 365) ? 365 : $this->config['allow_birthdays_ahead']) * 86400)))
 			{
 				$user_link = ($this->auth->acl_get('u_viewprofile')) ? get_username_string('full', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']) : get_username_string('no_profile', $ucbirthdayrow[$i]['user_id'], $ucbirthdayrow[$i]['username'], $ucbirthdayrow[$i]['user_colour']);
+				$birthdate = phpbb_gmgetdate($ucbirthdayrow[$i]['user_birthday_tstamp']);
 
 				//lets add to the birthday_ahead list.
-				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . date('D, j. M', $ucbirthdayrow[$i]['user_birthday_tstamp']) . '">' . $user_link . '</span>';
+				$birthday_ahead_list .= (($birthday_ahead_list != '') ? ', ' : '') . '<span title="' . $birthdate['weekday'] . ', ' . $birthdate['month'] . ' ' . $birthdate['mday'] . '">' . $user_link . '</span>';
 				if ($age = (int) substr($ucbirthdayrow[$i]['user_birthday'], -4))
 				{
 					$birthday_ahead_list .= ' (' . ($ucbirthdayrow[$i]['user_birthdayyear'] - $age) . ')';
