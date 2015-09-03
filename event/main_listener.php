@@ -36,7 +36,7 @@ class main_listener implements EventSubscriberInterface
 	/** @var \phpbb\user */
 	protected $user;
 
-	public function __construct(\phpbb\auth\auth $auth, \phpbb\cache\service $cache,\phpbb\config\config $config, \phpbb\db\driver\driver_interface $db, \phpbb\template\template $template, \phpbb\user $user)
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\cache\service $cache, \phpbb\config\config $config, \phpbb\db\driver\driver_interface $db, \phpbb\template\template $template, \phpbb\user $user)
 	{
 		$this->auth = $auth;
 		$this->cache = $cache;
@@ -79,7 +79,7 @@ class main_listener implements EventSubscriberInterface
 		$date_end = $date_start + ((int) $this->config['allow_birthdays_ahead'] * $secs_per_day);
 
 		$dates = array();
-		while($date_start <= $date_end)
+		while ($date_start <= $date_end)
 		{
 			$day = date('j', $date_start);
 			$month = date('n', $date_start);
@@ -88,7 +88,7 @@ class main_listener implements EventSubscriberInterface
 		}
 
 		$sql_array = array();
-		foreach($dates as $date)
+		foreach ($dates as $date)
 		{
 			$sql_array[] = "u.user_birthday LIKE '" . $date . "%'";
 		}
