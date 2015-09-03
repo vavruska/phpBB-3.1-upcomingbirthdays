@@ -93,12 +93,12 @@ class main_listener implements EventSubscriberInterface
 			$sql_array[] = "u.user_birthday LIKE '" . $date . "%'";
 		}
 
-		$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday
+		$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday, b.ban_id
 			FROM ' . USERS_TABLE . ' u
 			LEFT JOIN ' . BANLIST_TABLE . " b ON (u.user_id = b.ban_userid)
-			WHERE " . implode(' OR ', $sql_array) . "
-				AND (b.ban_id IS NULL
+			WHERE (b.ban_id IS NULL
 				OR b.ban_exclude = 1)
+				AND (" . implode(' OR ', $sql_array) . ")
 				AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER));
 		$result = $this->db->sql_query($sql);
 
@@ -107,7 +107,6 @@ class main_listener implements EventSubscriberInterface
 		$upcomingbirthdays = array();
 		while ($row = $this->db->sql_fetchrow($result))
 		{
-
 			$bdday = $bdmonth = 0;
 			list($bdday, $bdmonth) = array_map('intval', explode('-', $row['user_birthday']));
 
