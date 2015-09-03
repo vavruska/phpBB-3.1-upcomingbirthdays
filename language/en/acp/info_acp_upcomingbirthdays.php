@@ -37,5 +37,5 @@ $lang = array_merge($lang, array(
 
 	// ACP entries
 	'ALLOW_BIRTHDAYS_AHEAD'		=> 'Number of days to display upcoming birthdays',
-	'ALLOW_BIRTHDAYS_AHEAD_EXPLAIN'	=> 'Displays the upcoming birthdays on the index page. Entering 0 or negative numbers will disable this feature.',
+	'ALLOW_BIRTHDAYS_AHEAD_EXPLAIN'	=> 'Displays the upcoming birthdays on the index page. Entering 0 will disable this feature.<br /><em>You must have “Allow birthdays” as well as “Enable birthday listing” set to yes for the list of upcoming birthdays to appear.</em>',
 ));
