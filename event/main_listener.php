@@ -70,71 +70,80 @@ class main_listener implements EventSubscriberInterface
 
 		$time = $this->user->create_datetime();
 		$now = phpbb_gmgetdate($time->getTimestamp() + $time->getOffset());
+		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
 
 		// Number of seconds per day
 		$secs_per_day = 24 * 60 * 60;
 
-		// Only care about dates ahead of today.  Start date is always tomorrow
-		$date_start = $now[0] + $secs_per_day;
-		$date_end = $date_start + ((int) $this->config['allow_birthdays_ahead'] * $secs_per_day);
+		// We will use the timezone offset for our cache name
+		$cache_name = $time->getOffset();
+		$cache_name = str_replace('-', 'minus_', $cache_name);
+		$cache_name = $cache_name . '_ubl';
 
-		$dates = array();
-		while ($date_start <= $date_end)
+		if (($upcomingbirthdays = $this->cache->get('_' . $cache_name)) === false)
 		{
-			$day = date('j', $date_start);
-			$month = date('n', $date_start);
-			$dates[] = $this->db->sql_escape(sprintf('%2d-%2d-', $day, $month));
-			$date_start = $date_start + $secs_per_day;
-		}
+			// Only care about dates ahead of today.  Start date is always tomorrow
+			$date_start = $now[0] + $secs_per_day;
+			$date_end = $date_start + ((int) $this->config['allow_birthdays_ahead'] * $secs_per_day);
 
-		$sql_array = array();
-		foreach ($dates as $date)
-		{
-			$sql_array[] = "u.user_birthday LIKE '" . $date . "%'";
-		}
-
-		$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday, b.ban_id
-			FROM ' . USERS_TABLE . ' u
-			LEFT JOIN ' . BANLIST_TABLE . " b ON (u.user_id = b.ban_userid)
-			WHERE (b.ban_id IS NULL
-				OR b.ban_exclude = 1)
-				AND (" . implode(' OR ', $sql_array) . ")
-				AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER));
-		$result = $this->db->sql_query($sql);
-
-		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
-
-		$upcomingbirthdays = array();
-		while ($row = $this->db->sql_fetchrow($result))
-		{
-			$bdday = $bdmonth = 0;
-			list($bdday, $bdmonth) = array_map('intval', explode('-', $row['user_birthday']));
-
-			$birthdaycheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday) . ' UTC');
-			$birthdayyear = ($birthdaycheck < $today) ? (int) gmdate('Y') + 1 : (int) gmdate('Y');
-			$birthdaydate = ($birthdayyear . '-' . (int) $bdmonth . '-' . (int) $bdday);
-
-			// re-write those who have feb 29th as a birthday but only on non leap years
-			if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
+			$dates = array();
+			while ($date_start <= $date_end)
 			{
-				if (!$this->is_leap_year($birthdayyear) && !$time->format('L'))
-				{
-					$bdday = 28;
-					$birthdaydate = ($birthdayyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
-				}
+				$day = date('j', $date_start);
+				$month = date('n', $date_start);
+				$dates[] = $this->db->sql_escape(sprintf('%2d-%2d-', $day, $month));
+				$date_start = $date_start + $secs_per_day;
 			}
 
-			$upcomingbirthdays[] = array(
-				'user_birthday_tstamp' 	=> 	strtotime($birthdaydate. ' UTC'),
-				'username'				=>	$row['username'],
-				'user_birthdayyear' 	=> 	$birthdayyear,
-				'user_birthday' 		=> 	$row['user_birthday'],
-				'user_id'				=>	$row['user_id'],
-				'user_colour'			=>	$row['user_colour'],
-			);
+			$sql_array = array();
+			foreach ($dates as $date)
+			{
+				$sql_array[] = "u.user_birthday LIKE '" . $date . "%'";
+			}
 
+			$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday, b.ban_id
+				FROM ' . USERS_TABLE . ' u
+				LEFT JOIN ' . BANLIST_TABLE . " b ON (u.user_id = b.ban_userid)
+				WHERE (b.ban_id IS NULL
+					OR b.ban_exclude = 1)
+					AND (" . implode(' OR ', $sql_array) . ")
+					AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER));
+			$result = $this->db->sql_query($sql);
+
+			$upcomingbirthdays = array();
+			while ($row = $this->db->sql_fetchrow($result))
+			{
+				$bdday = $bdmonth = 0;
+				list($bdday, $bdmonth) = array_map('intval', explode('-', $row['user_birthday']));
+
+				$bdcheck = strtotime(gmdate('Y') . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday) . ' UTC');
+				$bdyear = ($bdcheck < $today) ? (int) gmdate('Y') + 1 : (int) gmdate('Y');
+				$bddate = ($bdyear . '-' . (int) $bdmonth . '-' . (int) $bdday);
+
+				// re-write those who have feb 29th as a birthday but only on non leap years
+				if ((int) trim($bdday) == 29 && (int) trim($bdmonth) == 2)
+				{
+					if (!$this->is_leap_year($bdyear) && !$time->format('L'))
+					{
+						$bdday = 28;
+						$bddate = ($bdyear . '-' . (int) trim($bdmonth) . '-' . (int) trim($bdday));
+					}
+				}
+
+				$upcomingbirthdays[] = array(
+					'user_birthday_tstamp' 	=> 	strtotime($bddate. ' UTC'),
+					'username'				=>	$row['username'],
+					'user_birthdayyear' 	=> 	$bdyear,
+					'user_birthday' 		=> 	$row['user_birthday'],
+					'user_id'				=>	$row['user_id'],
+					'user_colour'			=>	$row['user_colour'],
+				);
+
+			}
+			$this->db->sql_freeresult($result);
+			// cache this data for one hour, this improves performance
+			$this->cache->put('_' . $cache_name, $upcomingbirthdays, 3600);
 		}
-		$this->db->sql_freeresult($result);
 		sort($upcomingbirthdays);
 
 		$birthday_ahead_list = '';
@@ -144,7 +153,7 @@ class main_listener implements EventSubscriberInterface
 		{
 			if ($upcomingbirthdays[$i]['user_birthday_tstamp'] >= $tomorrow && $upcomingbirthdays[$i]['user_birthday_tstamp'] <= ($today + ($this->config['allow_birthdays_ahead'] * $secs_per_day)))
 			{
-				$user_link = ($this->auth->acl_get('u_viewprofile')) ? get_username_string('full', $upcomingbirthdays[$i]['user_id'], $upcomingbirthdays[$i]['username'], $upcomingbirthdays[$i]['user_colour']) : get_username_string('no_profile', $upcomingbirthdays[$i]['user_id'], $upcomingbirthdays[$i]['username'], $upcomingbirthdays[$i]['user_colour']);
+				$user_link = get_username_string('full', $upcomingbirthdays[$i]['user_id'], $upcomingbirthdays[$i]['username'], $upcomingbirthdays[$i]['user_colour']);
 				$birthdate = getdate($upcomingbirthdays[$i]['user_birthday_tstamp']);
 
 				//lets add to the birthday_ahead list.
