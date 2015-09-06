@@ -157,7 +157,7 @@ class main_listener implements EventSubscriberInterface
 				$birthdate = getdate($upcomingbirthdays[$i]['user_birthday_tstamp']);
 
 				//lets add to the birthday_ahead list.
-				$birthday_ahead_list .= (($birthday_ahead_list != '') ? $this->user->lang['COMMA_SEPARATOR'] : '') . '<span title="' . $birthdate['weekday'] . ', ' . $birthdate['month'] . ' ' . $birthdate['mday'] . ', ' . $birthdate['year'] . '">' . $user_link . '</span>';
+				$birthday_ahead_list .= (($birthday_ahead_list != '') ? $this->user->lang['COMMA_SEPARATOR'] : '') . '<span title="' . $birthdate['mday'] . '-' . $birthdate['mon'] . '-' . $birthdate['year'] . '">' . $user_link . '</span>';
 				if ($age = (int) substr($upcomingbirthdays[$i]['user_birthday'], -4))
 				{
 					$birthday_ahead_list .= ' (' . ($upcomingbirthdays[$i]['user_birthdayyear'] - $age) . ')';
