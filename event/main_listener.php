@@ -86,19 +86,14 @@ class main_listener implements EventSubscriberInterface
 			$date_start = $now[0] + $secs_per_day;
 			$date_end = $date_start + ((int) $this->config['allow_birthdays_ahead'] * $secs_per_day);
 
-			$dates = array();
+			$sql_array = array();
 			while ($date_start <= $date_end)
 			{
 				$day = date('j', $date_start);
 				$month = date('n', $date_start);
-				$dates[] = $this->db->sql_escape(sprintf('%2d-%2d-', $day, $month));
+				$date = $this->db->sql_escape(sprintf('%2d-%2d-', $day, $month));
+				$sql_array[] = "u.user_birthday " . $this->db->sql_like_expression($date . $this->db->get_any_char());
 				$date_start = $date_start + $secs_per_day;
-			}
-
-			$sql_array = array();
-			foreach ($dates as $date)
-			{
-				$sql_array[] = "u.user_birthday LIKE '" . $date . "%'";
 			}
 
 			$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday, b.ban_id
@@ -141,8 +136,8 @@ class main_listener implements EventSubscriberInterface
 
 			}
 			$this->db->sql_freeresult($result);
-			// cache this data for one hour, this improves performance
-			$this->cache->put('_' . $cache_name, $upcomingbirthdays, 3600);
+			// cache this data for five minutes, this improves performance
+			$this->cache->put('_' . $cache_name, $upcomingbirthdays, 300);
 		}
 		sort($upcomingbirthdays);
 
@@ -176,7 +171,7 @@ class main_listener implements EventSubscriberInterface
 	{
 		if (is_numeric($year))
 		{
-			return checkdate( 2, 29, (int) $year );
+			return checkdate( 2, 29, (int) $year);
 		}
 	}
 }
