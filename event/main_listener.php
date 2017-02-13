@@ -71,7 +71,6 @@ class main_listener implements EventSubscriberInterface
 	// Modified by RMcGirr83 for phpBB 3.1.X
 	public function upcoming_birthdays()
 	{
-if ($this->user->data['username'] != "Chris") { return;}
 		$time = $this->user->create_datetime();
 		$now = phpbb_gmgetdate($time->getTimestamp() + $time->getOffset());
 		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
