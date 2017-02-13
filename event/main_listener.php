@@ -36,14 +36,18 @@ class main_listener implements EventSubscriberInterface
 	/** @var \phpbb\user */
 	protected $user;
 
-	public function __construct(\phpbb\auth\auth $auth, \phpbb\cache\service $cache, \phpbb\config\config $config, \phpbb\db\driver\driver_interface $db, \phpbb\template\template $template, \phpbb\user $user)
+    /** @var dispatcher_interface */
+    protected $dispatcher;
+
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\cache\service $cache, \phpbb\config\config $config, \phpbb\db\driver\driver_interface $db, \phpbb\template\template $template, \phpbb\user $user, \phpbb\event\dispatcher $dispatcher)
 	{
 		$this->auth = $auth;
 		$this->cache = $cache;
 		$this->config = $config;
 		$this->db = $db;
 		$this->template = $template;
-		$this->user = $user;
+        $this->user = $user;
+        $this->dispatcher = $dispatcher;
 	}
 
 	static public function getSubscribedEvents()
@@ -67,7 +71,7 @@ class main_listener implements EventSubscriberInterface
 	// Modified by RMcGirr83 for phpBB 3.1.X
 	public function upcoming_birthdays()
 	{
-
+if ($this->user->data['username'] != "Chris") { return;}
 		$time = $this->user->create_datetime();
 		$now = phpbb_gmgetdate($time->getTimestamp() + $time->getOffset());
 		$today = (mktime(0, 0, 0, $now['mon'], $now['mday'], $now['year']));
@@ -80,7 +84,7 @@ class main_listener implements EventSubscriberInterface
 		$cache_name = str_replace('-', 'minus_', $cache_name);
 		$cache_name = $cache_name . '_ubl';
 
-		if (($upcomingbirthdays = $this->cache->get('_' . $cache_name)) === false)
+		if (($upcomingbirthdays = $this->cache->get('_' . $cache_name)) === false )
 		{
 			// Only care about dates ahead of today.  Start date is always tomorrow
 			$date_start = $now[0] + $secs_per_day;
@@ -96,14 +100,37 @@ class main_listener implements EventSubscriberInterface
 				$date_start = $date_start + $secs_per_day;
 			}
 
-			$sql = 'SELECT u.user_id, u.username, u.user_colour, u.user_birthday, b.ban_id
-				FROM ' . USERS_TABLE . ' u
-				LEFT JOIN ' . BANLIST_TABLE . " b ON (u.user_id = b.ban_userid)
-				WHERE (b.ban_id IS NULL
+            
+            $sql_ary = array(
+                'SELECT'    => 'u.user_id, u.username, u.user_colour, u.user_birthday',
+                'FROM'      => array(
+                    USERS_TABLE => 'u',
+                ),
+                'LEFT_JOIN' => array(
+                    array(
+                        'FROM' => array(BANLIST_TABLE => 'b'),
+                        'ON' => 'u.user_id = b.ban_userid',
+                    ),
+                ),
+                'WHERE'     => "(b.ban_id IS NULL
 					OR b.ban_exclude = 1)
 					AND (" . implode(' OR ', $sql_array) . ")
-					AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER));
-			$result = $this->db->sql_query($sql);
+                    AND " . $this->db->sql_in_set('u.user_type', array(USER_NORMAL , USER_FOUNDER)),
+            );
+            /**
+            * Event to modify the SQL query to get birthdays data
+            *
+            * @event core.index_modify_birthdays_sql
+            * @var  array   now         The assoc array with the 'now' local timestamp data
+            * @var  array   sql_ary     The SQL array to get the birthdays data
+            * @var  object  time        The user related Datetime object
+            * @since 3.1.7-RC1
+            */
+            $vars = array('now', 'sql_ary', 'time');
+            extract($this->dispatcher->trigger_event('core.index_modify_birthdays_sql', compact($vars)));
+
+            $sql = $this->db->sql_build_query('SELECT', $sql_ary);
+            $result = $this->db->sql_query($sql);
 
 			$upcomingbirthdays = array();
 			while ($row = $this->db->sql_fetchrow($result))
